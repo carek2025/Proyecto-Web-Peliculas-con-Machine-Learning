@@ -29,6 +29,42 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import type { User as UserType } from "@/lib/types"
+
+// Mapeo de IDs de badges a nombres
+const badgeMap: Record<number, string> = {
+  1: "admin",
+  2: "vip",
+  3: "pro",
+  4: "elite",
+}
+
+const getBadgeColor = (badgeId?: number) => {
+  const badge = badgeId ? badgeMap[badgeId] : undefined
+  switch (badge) {
+    case "admin":
+      return "bg-red-600"
+    case "vip":
+      return "bg-yellow-600"
+    case "pro":
+      return "bg-purple-600"
+    case "elite":
+      return "bg-blue-600"
+    default:
+      return "bg-gray-600"
+  }
+}
+
+const getBadgeIcon = (badgeId?: number) => {
+  const badge = badgeId ? badgeMap[badgeId] : undefined
+  switch (badge) {
+    case "admin":
+      return <Crown className="h-3 w-3" />
+    case "vip":
+      return <Star className="h-3 w-3" />
+    default:
+      return null
+  }
+}
 import { defaultAvatars } from "@/lib/store-data"
 
 export function Header() {
@@ -37,37 +73,41 @@ export function Header() {
   const [unreadCount, setUnreadCount] = useState(0)
 
   useEffect(() => {
-    const userData = localStorage.getItem("currentUser")
-    if (userData) {
-      const parsedUser = JSON.parse(userData)
-      setUser(parsedUser)
-
-      // Load notifications
-      const userNotifications = JSON.parse(localStorage.getItem(`notifications_${parsedUser.id}`) || "[]")
-      setNotifications(userNotifications)
-      setUnreadCount(userNotifications.filter((n: any) => !n.read).length)
+    try {
+      const userData = localStorage.getItem("currentUser")
+      if (userData) {
+        const parsedUser = JSON.parse(userData)
+        setUser(parsedUser)
+  
+        // Cargar notificaciones
+        const userNotifications = JSON.parse(localStorage.getItem(`notifications_${parsedUser.id}`) || "[]")
+        setNotifications(userNotifications)
+        setUnreadCount(userNotifications.filter((n: any) => !n.read).length)
+      }
+    } catch (error) {
+      console.error("Error al parsear datos de usuario o notificaciones:", error)
     }
 
-    // Listen for avatar changes
     const handleAvatarChange = (event: CustomEvent) => {
       if (user) {
         const updatedUser = { ...user, avatar: event.detail }
         setUser(updatedUser)
       }
     }
-
+  
     window.addEventListener("avatarChanged", handleAvatarChange as EventListener)
-
+  
     return () => {
       window.removeEventListener("avatarChanged", handleAvatarChange as EventListener)
     }
-  }, [user]) // Updated dependency array
-
+  }, []) // Arreglo de dependencias vacío // Updated dependency array
+  
   const handleLogout = () => {
     localStorage.removeItem("currentUser")
     setUser(null)
     window.location.href = "/"
   }
+  
 
   const markNotificationAsRead = (notificationId: number) => {
     if (!user) return
